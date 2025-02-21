@@ -34,35 +34,36 @@ class MazeKnowledgeBase:
         """
         self.clauses.add(clause)
         
-    def ask (self, query: "MazeClause") -> bool:
-        """
-        Given a MazeClause query, returns True if the KB entails the query, 
-        False otherwise. Uses the proof by contradiction technique detailed
-        during the lectures.
-        
-        Parameters:
-            query (MazeClause):
-                The query clause to determine if this is entailed by the KB
-        
-        Returns:
-            bool:
-                True if the KB entails the query, False otherwise
-        """
+    # kb = MazeKnowledgeBase()
+    # kb.tell(MazeClause([(("X", (1, 1)), True)]))
+    # print("KB Clauses:", kb.clauses)  
+
+
+    def ask(self, query: "MazeClause") -> bool:
+
+        negated_props = {(prop, loc): not val for (prop, loc), val in query.props.items()}
+        negated_query = MazeClause(list(negated_props.items()))
 
         temp_kb: set["MazeClause"] = deepcopy(self.clauses)
-        temp_kb.add(query.negation())
+        temp_kb.add(negated_query)  
+
         new: set["MazeClause"] = set()
-        while(True):
+
+        while True:
             for clause1, clause2 in itertools.combinations(temp_kb, 2):
-                resolved_clauses: set["MazeClause"] = MazeClause.resolve(clause1,clause2)
+                resolved_clauses: set["MazeClause"] = MazeClause.resolve(clause1, clause2)
+
                 if MazeClause([]) in resolved_clauses:
-                    return True
+                    return True  
+
                 new.update(resolved_clauses)
 
             if new.issubset(temp_kb):
-                return False
+                return False  
 
             temp_kb.update(new)
+
+
 
 
     def __len__ (self) -> int:
