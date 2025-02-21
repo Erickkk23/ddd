@@ -48,9 +48,22 @@ class MazeKnowledgeBase:
             bool:
                 True if the KB entails the query, False otherwise
         """
-        # [!] TODO: Implement the proof-by-contradiction knowledgebase
-        # query procedure here!
-        return False
+
+        temp_kb: set["MazeClause"] = deepcopy(self.clauses)
+        temp_kb.add(query.negation())
+        new: set["MazeClause"] = set()
+        while(True):
+            for clause1, clause2 in itertools.combinations(temp_kb, 2):
+                resolved_clauses: set["MazeClause"] = MazeClause.resolve(clause1,clause2)
+                if MazeClause([]) in resolved_clauses:
+                    return True
+                new.update(resolved_clauses)
+
+            if new.issubset(temp_kb):
+                return False
+
+            temp_kb.update(new)
+
 
     def __len__ (self) -> int:
         """
