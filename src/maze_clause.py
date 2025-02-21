@@ -15,32 +15,19 @@ class MazeClause:
         definition of a clause). After checking that the resulting clause isn't
         valid (i.e., vacuously true, or logically equivalent to True), stores
         the resulting props mapped to their truth value in a dictionary.
-        
-        Example:
-            The clause: P(1,1) v P(2,1) v ~P(1,2):
-            MazeClause([
-                (("P", (1, 1)), True), 
-                (("P", (2, 1)), True), 
-                (("P", (1, 2)), False)
-            ])
-            
-            Will thus be converted to a dictionary of the format:
-            
-            {
-                ("P", (1, 1)): True,
-                ("P", (2, 1)): True,
-                ("P", (1, 2)): False
-            }
-        
-        Parameters:
-            props (Sequence[tuple]):
-                A list of maze proposition tuples of the format:
-                ((symbol, location), truth_val), e.g.
-                (("P", (1, 1)), True)
         """
         self.props: dict[tuple[str, tuple[int, int]], bool] = dict()
-        self.valid: bool = False
+        self.valid: bool = False  # Track vacuous clauses
 
+        for prop, truth_value in props:
+            if prop in self.props:
+                # If we find both P and ¬P, it's a valid clause
+                if self.props[prop] != truth_value:
+                    self.valid = True
+                    self.props.clear()  # Clear dictionary to represent logical True
+                    return
+            else:
+                self.props[prop] = truth_value
         # [!] TODO: Complete the MazeClause constructor that appropriately
         # builds the dictionary of propositions and manages the valid
         # attribute according to the spec
@@ -150,27 +137,38 @@ class MazeClause:
     @staticmethod
     def resolve(c1: "MazeClause", c2: "MazeClause") -> set["MazeClause"]:
         """
-        Returns the set of non-valid MazeClauses that result from applying 
-        resolution to the two input.
-        
-        [!] We return a set of MazeClauses for ease of dealing with sets in
-        other contexts (like in MazeKnowledgeBase) even though the set
-        will only ever contain 0 or 1 resulting MazeClauses.
-        
+        Resolves two clauses by eliminating a single complementary proposition.
+
         Parameters:
-            c1, c2 (MazeClause):
-                The two MazeClauses being resolved.
-        
+            c1, c2 (MazeClause): The two MazeClauses being resolved.
+
         Returns:
-            set[MazeClause]:
-                There are 2 possible types of results:
-                - {}: The empty set if either c1 and c2 do NOT resolve (i.e., have
-                  no propositions shared between them that are negated in one but
-                  not the other) or if the result of resolution yields valid clauses
-                - {some_clause}: where some_clause is a non-valid clause either
-                  containing propositions OR is the empty clause in the case that
-                  c1 and c2 yield a contradiction.
+            set[MazeClause]: A set containing one resolved MazeClause if resolution occurs,
+                            or an empty set if resolution is not possible or results in a valid clause.
         """
-        # [!] TODO! Implement the resolution procedure on 2 input clauses here!
-        return set()
+        resolvents = set()
+        complementary_props = []
+
+        # Find all complementary literals
+        for prop in c1.props:
+            if prop in c2.props and c1.props[prop] != c2.props[prop]:  
+                complementary_props.append(prop)
+
+        # If more than one complementary literal exists, resolution is undefined
+        if len(complementary_props) != 1:
+            return resolvents  # No resolution possible
+
+        complementary_prop = complementary_props[0]
+
+        # Create a new clause without the complementary literal
+        new_props = {**c1.props, **c2.props}
+        del new_props[complementary_prop]  # Remove resolved literal
+
+        new_clause = MazeClause(new_props.items())
+
+        # **Fix:** Ignore vacuous (valid) clauses
+        if not new_clause.valid:
+            resolvents.add(new_clause)
+
+        return resolvents
 
