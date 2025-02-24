@@ -66,6 +66,7 @@ class MazeKnowledgeBase:
 
 
 
+
     def __len__ (self) -> int:
         """
         Returns the number of clauses currently stored in the KB
