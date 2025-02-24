@@ -136,39 +136,29 @@ class MazeClause:
 
     @staticmethod
     def resolve(c1: "MazeClause", c2: "MazeClause") -> set["MazeClause"]:
-        """
-        Resolves two clauses by eliminating a single complementary proposition.
-
-        Parameters:
-            c1, c2 (MazeClause): The two MazeClauses being resolved.
-
-        Returns:
-            set[MazeClause]: A set containing one resolved MazeClause if resolution occurs,
-                            or an empty set if resolution is not possible or results in a valid clause.
-        """
+ 
         resolvents = set()
-        complementary_props = []
+        complementary_props = None  
 
-        # Find all complementary literals
         for prop in c1.props:
             if prop in c2.props and c1.props[prop] != c2.props[prop]:  
-                complementary_props.append(prop)
+                if complementary_props is not None:
+                    return resolvents  
+                complementary_props = prop
 
-        # If more than one complementary literal exists, resolution is undefined
-        if len(complementary_props) != 1:
-            return resolvents  # No resolution possible
+        if complementary_props is not None:
+            new_props = {**c1.props, **c2.props} 
+            del new_props[complementary_props]  
 
-        complementary_prop = complementary_props[0]
+            if not new_props:
+                return {MazeClause([])}  
 
-        # Create a new clause without the complementary literal
-        new_props = {**c1.props, **c2.props}
-        del new_props[complementary_prop]  # Remove resolved literal
+            new_clause = MazeClause(new_props.items())
 
-        new_clause = MazeClause(new_props.items())
-
-        # **Fix:** Ignore vacuous (valid) clauses
-        if not new_clause.valid:
-            resolvents.add(new_clause)
+            if not new_clause.valid:
+                resolvents.add(new_clause)
 
         return resolvents
+
+
 
